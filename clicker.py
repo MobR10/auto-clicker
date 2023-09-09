@@ -58,5 +58,3 @@ def main_program(key):
 
 with Listener(on_press=main_program) as listener:
     listener.join()
-    
-    
