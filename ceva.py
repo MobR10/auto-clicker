@@ -1,7 +1,6 @@
 import time
 import keyboard as kb
 import threading
-import os
 
 from tkinter import *
 from Keys import Keys
@@ -9,22 +8,28 @@ from SaveConfig import SaveConfig
 
 
 def repeat_function():
-    print('Repeat Enabled')
-    while repeat_enable.state and not changing_state and repeat_button.value!='None':
-            kb.press_and_release(repeat_button.value)
-            time.sleep(0.03)
-    repeat_enable.state=False
-    print("Repeat Disabled\n")
+    if repeat_enable.state:
+        print('Repeat Enabled')
+        while repeat_enable.state and not changing_state and repeat_button.value!='None':
+                kb.press_and_release(repeat_button.value)
+                time.sleep(0.03)
+        repeat_enable.state=False
+        print("Repeat Disabled\n")
     
 def press_function():
-    print('Press Enabled')
     if press_enable.state and not changing_state and press_button.value!='None':
         kb.press(press_button.value)
-    press_enable.state=False
-    
+        print('Press Enabled')
+    else:
+        kb.release(press_button.value)
+        press_enable.state=False
+        print('Stopped Pressing')    
+
+# CHANGING BUTTONS
 changing_state=False
+changing_button=''
 # PRESS AND RELEASE LOOP
-repeat_enable=Keys('repeat_enable','Choose button to enable the repeated pressing',state=False,function=repeat_function)
+repeat_enable=Keys(name='repeat_enable',description='Choose button to enable the repeated pressing',state=False,function=repeat_function)
 repeat_button=Keys(name='repeat_button',description='Choose button to repeat pressing',state=None,function=None)
 
 # ONE PRESS AND HOLD
@@ -37,11 +42,6 @@ enable_keys=[repeat_enable,press_enable]
 # SAVE FILE
 save=SaveConfig(repeat_enable,repeat_button,press_enable,press_button)
 
-# INSTRUCTIONS
-if repeat_enable.value!='None' and repeat_button.value!='None':
-    print(f"Press {repeat_enable.value.capitalize()} to keep pressing and releasing {repeat_button.value.capitalize()}!")  
-if press_enable.value!='None' and press_button.value!='None':    
-    print(f"Press {press_enable.value.capitalize()} to keep pressing {press_button.value.capitalize()}!\n")
 
 def  main(e):
     if not changing_state:
@@ -50,27 +50,28 @@ def  main(e):
                 if e.name==key.value and not key.pressed:
                     key.pressed=True
                     key.state= not key.state
-                    if key.state:
-                        x=threading.Thread(target=lambda:key.function(),daemon=True,name=key.name)
-                        x.start()  
-        elif(e.event_type=='up'):
+                    x=threading.Thread(target=lambda:key.function(),daemon=True,name=key.name)
+                    x.start()
+        elif e.event_type=='up':
             for key in enable_keys:
                 if e.name==key.value and key.pressed:
                     key.pressed=False               
     
-def change_button(e):
+def main_change(e):
+    global changing_state,changing_button
     if changing_state:
-        print('waiting for input')
         if(e.event_type=='down'):
-            pass
+            changing_button.value=e.name
+            print('Changed value for '+changing_button.name+' in '+e.name)
+        changing_state=False
             
   
-def find_button_to_change(button):
-    global changing_state
+def change_button(button):
+    global changing_state,changing_button
     if changing_state==False:
         changing_state=True
-        x=threading.Thread(target= lambda: change_button(button),daemon=True)
-        x.start()
+        changing_button=button
+        print('waiting for input...')
     else:
         print('MAI INTAI SELECTEAZA BUTONUL ANTERIOR, BIATCH!')
     
@@ -88,17 +89,21 @@ if __name__=='__main__':
      
     #  CONFIGURATION
     save.read_config()
-    
-    # kb.on_press(main_press)
-    # kb.on_release(main_release)
+    # INSTRUCTIONS
+
+if repeat_enable.value!='None' and repeat_button.value!='None':
+    print(f"Press {repeat_enable.value.capitalize()} to keep pressing and releasing {repeat_button.value.capitalize()}!")  
+if press_enable.value!='None' and press_button.value!='None':    
+    print(f"Press {press_enable.value.capitalize()} to keep pressing {press_button.value.capitalize()}!\n")
+
     kb.hook(main)
-    kb.hook(change_button)
+    kb.hook(main_change)
     
-    window_repeat_enable=Button(window,text="Repeat Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: find_button_to_change(repeat_enable))
-    window_repeat_button=Button(window,text="Repeat Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: find_button_to_change(repeat_button))
+    window_repeat_enable=Button(window,text="Repeat Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(repeat_enable))
+    window_repeat_button=Button(window,text="Repeat Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(repeat_button))
     
-    window_press_enable=Button(window,text="Press Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: find_button_to_change(press_enable))
-    window_press_button=Button(window,text="Press Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: find_button_to_change(press_button))
+    window_press_enable=Button(window,text="Press Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(press_enable))
+    window_press_button=Button(window,text="Press Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(press_button))
     
     window_repeat_enable.place(x=0,y=0)
     window_repeat_button.place(x=110,y=0)
