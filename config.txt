@@ -1,4 +1,4 @@
 repeat_enable=a
-repeat_button=j
+repeat_button=q
 press_enable=b
-press_button=n
+press_button=q
