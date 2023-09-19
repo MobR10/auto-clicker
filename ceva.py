@@ -11,7 +11,7 @@ def repeat_function():
         print('Repeat Enabled\n')
         while repeat_enable.state and not changing_state:
                 kb.press_and_release(repeat_button.value)
-                time.sleep(0.03)
+                time.sleep(0.04)
         print("Repeat Disabled\n")
     
 def press_function():
@@ -57,8 +57,11 @@ def  main(e):
         elif e.event_type=='up':
             for key in enable_keys:
                 if e.name==key.value and key.pressed:
-                    key.pressed=False               
-    
+                    key.pressed=False     
+
+second_window=Toplevel()
+created_window=False
+
 def main_change(e):
     global changing_state,changing_button
     if changing_state:
@@ -72,7 +75,9 @@ def main_change(e):
                 changing_button.value=e.name
                 print('Changed value for '+changing_button.name+' in '+e.name)
         changing_state=False
+        second_window.quit()
         
+
 def change_button(button):
     global changing_state,changing_button
     if changing_state==False:
@@ -81,12 +86,28 @@ def change_button(button):
         print('waiting for input...')
     else:
         print('MAI INTAI SELECTEAZA BUTONUL ANTERIOR, BIATCH!')
+
+def new_window(key):
+    global created_window,second_window,window
+    if not created_window:
+        second_window.master=window
+        #second_window=Toplevel(window)
+        second_window.geometry('200x50')
+        second_window.resizable(False,False)
+        second_window.title('')
+
+        label=Label(second_window,text='Choose '+key.name)
+        label.pack()
+        button=Button(second_window,text='...',command=lambda: change_button(key))
+        button.pack()
+        window.wait_window(second_window)
     
 if __name__=='__main__': 
     # WINDOW INIT
     window=Tk()
     window.geometry('400x400')
     window.resizable(False,False)
+    window.title('RClicker')
     
     # HANDLING CLOSING WINDOW BEHAVIOUR   
     def on_closing():
@@ -112,11 +133,11 @@ if __name__=='__main__':
     kb.hook(main)
     kb.hook(main_change)
         
-    window_repeat_enable=Button(window,text="Repeat Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(repeat_enable))
-    window_repeat_button=Button(window,text="Repeat Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(repeat_button))
+    window_repeat_enable=Button(window,text="Repeat Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: new_window(repeat_enable))
+    window_repeat_button=Button(window,text="Repeat Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: new_window(repeat_button))
         
-    window_press_enable=Button(window,text="Press Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(press_enable))
-    window_press_button=Button(window,text="Press Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: change_button(press_button))
+    window_press_enable=Button(window,text="Press Enable",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: new_window(press_enable))
+    window_press_button=Button(window,text="Press Button",fg='green',bg='black',font=('Arial',10,"bold"),command=lambda: new_window(press_button))
         
     window_repeat_enable.place(x=0,y=0)
     window_repeat_button.place(x=110,y=0)
