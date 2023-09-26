@@ -1,4 +1,4 @@
-repeat_enable=a
-repeat_button=q
-press_enable=b
-press_button=q
+repeat Value Key=b
+repeat Action Key=a
+press Value Key=a
+press Action Key=a
