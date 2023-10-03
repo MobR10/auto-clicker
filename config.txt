@@ -1,4 +1,10 @@
-repeat Value Key=b
-repeat Action Key=a
-press Value Key=a
-press Action Key=a
+[repeat] value key=None
+[repeat] action key=None
+[press] value key=None
+[press] action key=None
+[loop] value key=None
+[stop_record] value key=None
+[autoclick] value key=None
+[mouse hold] value key=None
+[mouse button]=None
+[mouse interval]=0.1
