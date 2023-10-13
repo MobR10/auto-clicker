@@ -27,7 +27,7 @@ class Mouse:
         
         self.pressed=False
         self.state=False
-    
+        
 class Controller:
     def __init__(self,key_list:list[Key]=None,mouse_list:list[Mouse]=None,app:tk.Tk=None):
         from gui import Popup
@@ -42,7 +42,6 @@ class Controller:
         self.abort:bool=False
         self.error:bool=False
         self.keys_running:bool=False
-        self.mouse_running:bool=False
         self.change_state:bool=False
         self.change_key:Key|Mouse=None
         self.change_order:int=None
@@ -55,11 +54,11 @@ class Controller:
             'Right Button' : 'right'
         }
     
-        
+    # INPUT LISTENER   
     def  main(self,e:kb.KeyboardEvent):
         if not self.change_state:
             if not self.error:
-                if self.mouse_running:
+                if self.keys_running:
                     if e.event_type=='down':
                         for mouse in self.mouse_list:
                             if e.name==mouse.value_key and not mouse.pressed and mouse.state:
@@ -68,11 +67,14 @@ class Controller:
                                     thread=threading.Thread(target=lambda:mouse.function(),daemon=True,name=mouse.name)
                                     thread.start()
                                 mouse.pressed=True
-                if not self.mouse_running:
+                if not self.keys_running:
                     if e.event_type=='down':
+                        
                         for mouse in self.mouse_list:
                             if e.name==mouse.value_key and not mouse.pressed and not mouse.state:
-                                if mouse.function!=None:
+                                if Mouse.button=='None':
+                                    self.messagebox_thread(title='Button Not Selected',message='Please select a button',type='info')
+                                elif mouse.function!=None:
                                     mouse.state=True
                                     thread=threading.Thread(target=lambda:mouse.function(),daemon=True,name=mouse.name)
                                     thread.start()
@@ -102,6 +104,8 @@ class Controller:
                 for mouse in self.mouse_list:
                     if e.name==mouse.value_key and mouse.pressed:
                         mouse.pressed=False
+    
+    # CHANGING BUTTONS FUNCTIONS
     
     def main_change(self,e:kb.KeyboardEvent):
         if self.change_state:
@@ -136,7 +140,7 @@ class Controller:
                     self.change_state=False
                         
     def change_init(self,key:Key|Mouse,value:str):
-        if not self.keys_running and not self.mouse_running:
+        if not self.keys_running:
             self.change_state=True
             self.change_key=key
             if value=='value':
@@ -166,6 +170,8 @@ class Controller:
         self.change_state=False
         self.top_level.on_close_toplevel()
         
+    # KEYBOARD FUNCTIONS
+    
     def repeat_function(self,key:Key):
         if key.action_key=='None': 
             key.state=False
@@ -229,24 +235,31 @@ class Controller:
     
     def autoclick(self,mouse:Mouse):
         if mouse.state and Mouse.button!='None':
-            self.mouse_running=True
+            self.keys_running=True
             print(f'Clicking {Mouse.button}')
+            thread=threading.Thread(target=self.autoclick_thread,args=(mouse,),daemon=True,name='autoclicker-process')
+            thread.start()
             while mouse.state:
+                time.sleep(0.1)
+            print(f'Stopped clicking {Mouse.button}')
+            self.keys_running=False
+            
+    def autoclick_thread(self,mouse:Mouse):
+        while mouse.state:
                 ms.click(self.buttons[Mouse.button])
                 time.sleep(Mouse.interval)
-            print(f'Stopped clicking {Mouse.button}')
-            self.mouse_running=False
     
     def mouse_press(self,mouse:Mouse):
         if mouse.state and Mouse.button!='None':
-            self.mouse_running=True
+            self.keys_running=True
             print(f'Pressing {Mouse.button}')
             ms.press(self.buttons[Mouse.button])
         elif not mouse.state and Mouse.button!='None':
             ms.release(self.buttons[Mouse.button])
             print(f'Released {Mouse.button}')
-            self.mouse_running=False
+            self.keys_running=False
         
+    # MESSAGE BOX FACTORY
     
     def messagebox_thread(self,title:str,message:str,type:str):
         thread=threading.Thread(target=self.messagebox_create,args=(title,message,type),name=type,daemon=True)
@@ -259,6 +272,8 @@ class Controller:
         elif type=='info':
             messagebox.showinfo(title=title,message=message)
         self.error=False
+        
+    # CHECKING REPEATED OCCURING VALUES AT READING CONFIGURATION FILE
     
     def are_identical_value_keys(self):
         for index in range(1,len(self.key_list)):
@@ -272,4 +287,3 @@ class Controller:
                 if self.mouse_list[index_1].value_key == self.key_list[index_2].value_key and self.mouse_list[index_1].value_key!='None':
                     return True
         return False        
-    
